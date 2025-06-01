@@ -15,7 +15,7 @@ export default function App() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Calendar" component={CalendarScreen} />
-        {/* 後で他の画面も追加aa */}
+        {/* 後で他の画面も追加*/}
       </Stack.Navigator>
     </NavigationContainer>
   );
