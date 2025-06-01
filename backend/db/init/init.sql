@@ -1,0 +1,9 @@
+CREATE DATABASE IF NOT EXISTS AI_Seminar_IE3B;
+USE AI_Seminar_IE3B;
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+INSERT INTO users (name) VALUES ('Alice'), ('Bob'), ('Charlie');

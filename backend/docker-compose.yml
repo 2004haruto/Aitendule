@@ -1,0 +1,58 @@
+version: "3.9"
+services:
+  app:
+    build:
+      context: .  # Dockerfileがあるディレクトリを指定
+      dockerfile: Dockerfile  # 使用するDockerfileを指定
+    ports:
+      - "3000:3000"  # アプリケーションのポート
+    environment:
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=AI_Seminar_IE3B  # 使用するデータベース名
+    depends_on:
+      - db  # dbサービスが立ち上がる前にアプリケーションを起動しないように指定
+    networks:
+      - app_network
+
+  db:
+    image: mysql:8.0  # 使用するMySQLのバージョン
+    container_name: mysql2  # コンテナ名
+    restart: always  # コンテナが停止した場合自動的に再起動
+    environment:
+      MYSQL_ROOT_PASSWORD: root  # rootパスワード
+      MYSQL_DATABASE: AI_Seminar_IE3B  # 初期データベース
+    ports:
+      - "3308:3306"  # ローカルホストの3307ポートをMySQLの3306ポートにマッピング
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d  # ローカルのdb/initディレクトリをコンテナにマウント
+      - mysql_data:/var/lib/mysql  # MySQLのデータを永続化するボリューム
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf
+    networks:
+      - app_network
+
+  mlapi:  # ← AI提案APIを追加
+    build:
+      context: ./python-ml-api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_DB=AI_Seminar_IE3B
+    depends_on:
+      - db
+    networks:
+      - app_network    
+
+volumes:
+  mysql_data:  # MySQLのデータを永続化するためのボリューム設定
+
+networks:
+  app_network:  # アプリケーションのネットワーク
+    driver: bridge  # コンテナ間の通信をサポートするためのネットワーク
