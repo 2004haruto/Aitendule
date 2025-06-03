@@ -44,7 +44,7 @@ export default function HomeScreen({ navigation }) {
         }
 
         const response = await axios.post(
-          `http://10.104.0.175:3000/api/users/${storedUserId}/locations`,
+          `http://10.104.0.196:3000/api/users/${storedUserId}/locations`,
           {
             latitude: loc.coords.latitude,
             longitude: loc.coords.longitude,
