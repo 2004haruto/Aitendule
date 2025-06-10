@@ -40,7 +40,7 @@ func main() {
 
 	// CORS 設定
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:3000", "http://10.104.0.196:3000"},
+		AllowedOrigins: []string{"http://localhost:3000", "http://10.104.0.167:3000"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders: []string{"Content-Type", "Authorization"},
 	})

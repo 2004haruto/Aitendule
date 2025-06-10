@@ -19,13 +19,13 @@ const getWeatherIconName = (condition) => {
 };
 
 const fetchUserCities = async (userId) => {
-  const response = await fetch(`http://10.104.0.196:3000/api/users/${userId}/cities`);
+  const response = await fetch(`http://10.104.0.167:3000/api/users/${userId}/cities`);
   if (!response.ok) throw new Error('都市データの取得に失敗しました');
   return await response.json();
 };
 
 const addUserCity = async (userId, cityName) => {
-  const response = await fetch(`http://10.104.0.196:3000/api/users/${userId}/cities`, {
+  const response = await fetch(`http://10.104.0.167:3000/api/users/${userId}/cities`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ city_name: cityName }),
@@ -36,7 +36,7 @@ const addUserCity = async (userId, cityName) => {
 
 const deleteUserCity = async (userId, cityName) => {
   const encodedCityName = encodeURIComponent(cityName); // URLエンコード
-  const response = await fetch(`http://10.104.0.196:3000/api/users/${userId}/cities/name/${encodedCityName}`, {
+  const response = await fetch(`http://10.104.0.167:3000/api/users/${userId}/cities/name/${encodedCityName}`, {
     method: 'DELETE',
   });
   if (!response.ok) throw new Error('都市の削除に失敗しました');

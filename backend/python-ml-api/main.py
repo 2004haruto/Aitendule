@@ -1,19 +1,28 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
+from crud import get_latest_location
+from ml_logic.recommend import recommend_all
+from ml_logic.data import fetch_weather
 
-app = FastAPI()
+# ルーターを作成
+router = APIRouter(prefix="/api/v1")
 
 class SuggestRequest(BaseModel):
-    temp: float
-    weather: str
+    user_id: int
 
-@app.post("/suggest")
-def suggest_clothing(req: SuggestRequest):
-    if req.temp < 10:
-        return {"items": ["コート", "長袖シャツ", "ジーンズ"]}
-    elif req.temp < 20:
-        if req.weather == "rainy":
-            return {"items": ["カーディガン", "長袖シャツ", "レインコート"]}
-        return {"items": ["カーディガン", "長袖シャツ", "ジーンズ"]}
-    else:
-        return {"items": ["半袖シャツ", "ショートパンツ"]}
+@router.post("/suggest")
+def suggest(req: SuggestRequest):
+    location = get_latest_location(req.user_id)
+    if not location:
+        raise HTTPException(status_code=404, detail="Location not found")
+
+    weather_data = fetch_weather(location["latitude"], location["longitude"])
+    if not weather_data:
+        raise HTTPException(status_code=500, detail="Weather fetch failed")
+
+    recommendations = recommend_all(req.user_id, weather_data)
+    return {"recommendations": recommendations}
+
+# FastAPI本体にルーターを登録
+app = FastAPI()
+app.include_router(router)

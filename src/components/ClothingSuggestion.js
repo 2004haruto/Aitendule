@@ -1,7 +1,43 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function ClothingSuggestion({ suggestionText }) {
+export default function ClothingSuggestion() {
+  const [suggestionText, setSuggestionText] = useState("読み込み中...");
+
+  useEffect(() => {
+    const fetchSuggestion = async () => {
+      try {
+        const userId = await AsyncStorage.getItem("user_id");
+
+        if (!userId) {
+          setSuggestionText("ユーザーIDが見つかりません");
+          return;
+        }
+
+        const response = await fetch("http://10.104.0.167:3000/api/v1/suggest", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ user_id: parseInt(userId) }),
+        });
+
+        if (!response.ok) {
+          throw new Error("APIリクエスト失敗");
+        }
+
+        const data = await response.json();
+        setSuggestionText(data.recommendations || "提案がありませんでした");
+      } catch (error) {
+        console.error("服装提案取得エラー:", error);
+        setSuggestionText("服装提案の取得に失敗しました");
+      }
+    };
+
+    fetchSuggestion();
+  }, []);
+
   return (
     <View style={styles.suggestionContainer}>
       <Text style={styles.sectionTitle}>AI服装提案</Text>
