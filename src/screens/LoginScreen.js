@@ -9,7 +9,7 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('エラー', 'メールアドレスとパスワードを入力してください。');
+      Alert.alert('エラー', 'メールアドレスとパスワードを入力してください。a');
       return;
     }
 
