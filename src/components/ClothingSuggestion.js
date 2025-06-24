@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ML_API_BASE_URL } from "@env";
 
 export default function ClothingSuggestion() {
   const [suggestionText, setSuggestionText] = useState("読み込み中...");
@@ -15,7 +16,7 @@ export default function ClothingSuggestion() {
           return;
         }
 
-        const response = await fetch("http://10.104.0.167:3000/api/v1/suggest", {
+        const response = await fetch(`${ML_API_BASE_URL}/api/v1/suggest`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -28,7 +29,9 @@ export default function ClothingSuggestion() {
         }
 
         const data = await response.json();
-        setSuggestionText(data.recommendations || "提案がありませんでした");
+
+        // ✅ ここで suggestion_text を表示
+        setSuggestionText(data.suggestion_text || "提案が取得できませんでした");
       } catch (error) {
         console.error("服装提案取得エラー:", error);
         setSuggestionText("服装提案の取得に失敗しました");
@@ -88,5 +91,6 @@ const styles = StyleSheet.create({
   suggestionDescription: {
     color: "gray",
     fontSize: 12,
+    marginTop: 4,
   },
 });

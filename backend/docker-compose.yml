@@ -2,43 +2,45 @@ version: "3.9"
 services:
   app:
     build:
-      context: .  # Dockerfileがあるディレクトリを指定
-      dockerfile: Dockerfile  # 使用するDockerfileを指定
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "3000:3000"  # アプリケーションのポート
+      - "3000:3000"
     environment:
       - DB_USER=root
       - DB_PASSWORD=root
       - DB_HOST=db
       - DB_PORT=3306
-      - DB_NAME=AI_Seminar_IE3B  # 使用するデータベース名
+      - DB_NAME=AI_Seminar_IE3B
     depends_on:
-      - db  # dbサービスが立ち上がる前にアプリケーションを起動しないように指定
+      - db
     networks:
       - app_network
 
   db:
-    image: mysql:8.0  # 使用するMySQLのバージョン
-    container_name: mysql2  # コンテナ名
-    restart: always  # コンテナが停止した場合自動的に再起動
+    image: mysql:8.0
+    container_name: mysql2
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root  # rootパスワード
-      MYSQL_DATABASE: AI_Seminar_IE3B  # 初期データベース
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: AI_Seminar_IE3B
     ports:
-      - "3308:3306"  # ローカルホストの3307ポートをMySQLの3306ポートにマッピング
+      - "3308:3306"
     volumes:
-      - ./db/init:/docker-entrypoint-initdb.d  # ローカルのdb/initディレクトリをコンテナにマウント
-      - mysql_data:/var/lib/mysql  # MySQLのデータを永続化するボリューム
+      - ./db/init:/docker-entrypoint-initdb.d
+      - mysql_data:/var/lib/mysql
       - ./my.cnf:/etc/mysql/conf.d/my.cnf
     networks:
       - app_network
 
-  mlapi:  # ← AI提案APIを追加
+  mlapi:
     build:
       context: ./python-ml-api
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.app
     ports:
       - "8000:8000"
+    env_file:
+      - ./python-ml-api/.env
     environment:
       - MYSQL_USER=root
       - MYSQL_PASSWORD=root
@@ -47,12 +49,34 @@ services:
       - MYSQL_DB=AI_Seminar_IE3B
     depends_on:
       - db
+    volumes:
+      - ml_models:/app/models
     networks:
-      - app_network    
+      - app_network
+
+  trainer:
+    build:
+      context: ./python-ml-api
+      dockerfile: Dockerfile.trainer
+    command: python ml_logic/train_models_by_category.py
+    environment:
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_DB=AI_Seminar_IE3B
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+    depends_on:
+      - db
+    volumes:
+      - ./models:/app/models    
+    networks:
+      - app_network
 
 volumes:
-  mysql_data:  # MySQLのデータを永続化するためのボリューム設定
+  mysql_data:
+  ml_models:
 
 networks:
-  app_network:  # アプリケーションのネットワーク
-    driver: bridge  # コンテナ間の通信をサポートするためのネットワーク
+  app_network:
+    driver: bridge

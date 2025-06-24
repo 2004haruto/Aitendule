@@ -21,7 +21,7 @@ func init() {
 	}
 
 	// 必須環境変数の検証
-	requiredEnv := []string{"JWT_SECRET", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_HOST", "MYSQL_DB"}
+	requiredEnv := []string{"JWT_SECRET", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_HOST", "MYSQL_DB", "API_BASE_URL"}
 	for _, envVar := range requiredEnv {
 		if os.Getenv(envVar) == "" {
 			log.Fatalf("Missing required environment variable: %s", envVar)
@@ -32,17 +32,21 @@ func init() {
 func main() {
 	// DB接続（リトライ付き）
 	const maxRetries = 10
-	const retryDelay = 3 * time.Second // リトライの間隔を設定
+	const retryDelay = 3 * time.Second
 
 	if err := utils.ConnectDBWithRetry(maxRetries, retryDelay); err != nil {
 		log.Fatalf("DB接続失敗（最大リトライ%d回）: %v", maxRetries, err)
 	}
 
+	// API_BASE_URL を環境変数から取得
+	apiBaseURL := os.Getenv("API_BASE_URL")
+
 	// CORS 設定
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:3000", "http://10.104.0.167:3000"},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders: []string{"Content-Type", "Authorization"},
+		AllowedOrigins:   []string{"http://localhost:3000", apiBaseURL},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
 	})
 
 	// ルーターの作成
@@ -57,10 +61,9 @@ func main() {
 	r.HandleFunc("/api/clothing_items", handlers.GetClothingItems).Methods("GET")
 	r.HandleFunc("/api/users/{id}/locations", handlers.PostUserLocation).Methods("POST")
 
-
 	// サーバー設定
 	server := &http.Server{
-		Addr:    ":3000", // ポート3000でリスン
+		Addr:    ":3000",
 		Handler: corsHandler.Handler(r),
 	}
 

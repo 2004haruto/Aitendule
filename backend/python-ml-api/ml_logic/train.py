@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
@@ -9,41 +10,52 @@ import joblib
 
 from ml_logic.data import create_training_data  # data.py の関数をimport
 
-def prepare_and_train_model(training_data):
-    features_list = [x[0] for x in training_data]
-    labels = [x[1] for x in training_data]
 
-    df = pd.DataFrame(features_list)
-    df["label"] = labels
+def prepare_and_train_models_by_category(training_data):
+    # 保存先ディレクトリの作成
+    os.makedirs("models", exist_ok=True)
 
-    X = df.drop("label", axis=1)
-    y = df["label"]
+    # DataFrame に変換
+    df = pd.DataFrame([x[0] for x in training_data])
+    df["label"] = [x[1] for x in training_data]
 
-    categorical_features = ["weather", "user_id", "month", "day", "hour", "weekday", "category"]
-    numeric_features = ["temperature"]
+    # カテゴリごとにモデルを学習
+    for category in df["category"].unique():
+        subset = df[df["category"] == category]
+        if subset.empty:
+            print(f"スキップ: {category}（データが空）")
+            continue
 
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features),
-            ("num", "passthrough", numeric_features),
-        ]
-    )
+        X = subset.drop("label", axis=1)
+        y = subset["label"]
 
-    clf = Pipeline([
-        ("preprocessor", preprocessor),
-        ("classifier", RandomForestClassifier(n_estimators=100, random_state=42)),
-    ])
+        categorical_features = ["weather", "user_id", "month", "day", "hour", "weekday"]
+        numeric_features = ["temperature"]
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    clf.fit(X_train, y_train)
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features),
+                ("num", "passthrough", numeric_features),
+            ]
+        )
 
-    y_pred = clf.predict(X_test)
-    print(f"Accuracy: {accuracy_score(y_test, y_pred):.4f}")
+        clf = Pipeline([
+            ("preprocessor", preprocessor),
+            ("classifier", RandomForestClassifier(n_estimators=100, random_state=42)),
+        ])
 
-    joblib.dump(clf, "clothing_recommender.pkl")
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    return clf
+        clf.fit(X_train, y_train)
+        y_pred = clf.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)
+        print(f"[{category}] Accuracy: {accuracy:.4f}")
+
+        model_path = f"models/{category}_model.pkl"
+        joblib.dump(clf, model_path)
+        print(f"モデル保存: {model_path}")
+
 
 if __name__ == "__main__":
     training_data = create_training_data()
-    prepare_and_train_model(training_data)
+    prepare_and_train_models_by_category(training_data)

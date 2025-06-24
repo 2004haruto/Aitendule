@@ -7,35 +7,19 @@ def fetch_weather(lat, lon):
     API_KEY = os.getenv("OPENWEATHER_API_KEY")
     if not API_KEY:
         raise ValueError("OPENWEATHER_API_KEY is not set in environment variables")
+    
     url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API_KEY}&units=metric&lang=ja"
-    response = requests.get(url)
-    if response.status_code != 200:
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        return {
+            "temperature": data["main"]["temp"],
+            "weather": data["weather"][0]["main"].lower()  # ex: "clear", "rain"
+        }
+    except Exception as e:
+        print(f"天気情報の取得に失敗: {e}")
         return None
-    data = response.json()
-    return {
-        "temperature": data["main"]["temp"],
-        "weather": data["weather"][0]["main"].lower()
-    }
-
-def encode_weather(weather_str):
-    mapping = {
-        "thunderstorm": 0,  # 雷雨
-        "drizzle": 1,       # 霧雨
-        "rain": 2,          # 雨
-        "snow": 3,          # 雪
-        "clear": 4,         # 晴れ
-        "clouds": 5,        # 曇り
-        "mist": 6,          # 靄
-        "smoke": 7,         # 煙
-        "haze": 8,          # 霞
-        "dust": 9,          # 埃 or 塵
-        "fog": 10,          # 霧
-        "sand": 11,         # 砂
-        "ash": 12,          # 灰
-        "squall": 13,       # スコール
-        "tornado": 14       # トルネード
-    }
-    return mapping.get(weather_str.lower(), -1)
 
 def create_training_data():
     conn = get_connection()
@@ -50,42 +34,44 @@ def create_training_data():
     choices = cursor.fetchall()
 
     training_data = []
+
     for choice in choices:
-        user_id = choice["user_id"]
-        chosen_item = choice["clothing_item_name"]
-        category = choice["category"]
-        choice_time = choice["created_at"]
+        try:
+            user_id = choice["user_id"]
+            chosen_item = choice["clothing_item_name"]
+            category = choice["category"]
+            choice_time = choice["created_at"]
 
-        cursor.execute("""
-            SELECT * FROM user_locations
-            WHERE user_id=%s AND created_at <= %s
-            ORDER BY created_at DESC
-            LIMIT 1
-        """, (user_id, choice_time))
-        location = cursor.fetchone()
-        if not location:
+            # 最新の位置情報を取得（選択時点以前）
+            cursor.execute("""
+                SELECT * FROM user_locations
+                WHERE user_id=%s AND created_at <= %s
+                ORDER BY created_at DESC
+                LIMIT 1
+            """, (user_id, choice_time))
+            location = cursor.fetchone()
+            if not location:
+                continue
+
+            weather = fetch_weather(location["latitude"], location["longitude"])
+            if not weather:
+                continue
+
+            features = {
+                "temperature": weather["temperature"],
+                "weather": weather["weather"],  # ← 数値ではなく文字列
+                "user_id": user_id,
+                "month": choice_time.month,
+                "day": choice_time.day,
+                "hour": choice_time.hour,
+                "weekday": choice_time.weekday(),
+                "category": category,
+            }
+
+            training_data.append((features, chosen_item))
+        except Exception as e:
+            print(f"データ処理中にエラー: {e}")
             continue
-
-        weather = fetch_weather(location["latitude"], location["longitude"])
-        if not weather:
-            continue
-
-        weather_encoded = encode_weather(weather["weather"])
-        if weather_encoded == -1:
-            continue
-
-        features = {
-            "temperature": weather["temperature"],
-            "weather": weather_encoded,
-            "user_id": user_id,
-            "month": choice_time.month,
-            "day": choice_time.day,
-            "hour": choice_time.hour,
-            "weekday": choice_time.weekday(),
-            "category": category,
-        }
-
-        training_data.append((features, chosen_item))
 
     conn.close()
     return training_data

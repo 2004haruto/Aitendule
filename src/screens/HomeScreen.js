@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import { GO_API_BASE_URL } from "@env";
 
 import WeatherSection from "../components/WeatherSection";
 import TodaySchedule from "../components/TodaySchedule";
@@ -44,7 +45,7 @@ export default function HomeScreen({ navigation }) {
         }
 
         const response = await axios.post(
-          `http://10.104.0.167:3000/api/users/${storedUserId}/locations`,
+          `${GO_API_BASE_URL}/api/users/${storedUserId}/locations`,
           {
             latitude: loc.coords.latitude,
             longitude: loc.coords.longitude,

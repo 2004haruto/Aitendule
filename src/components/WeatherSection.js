@@ -4,6 +4,7 @@ import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchWeatherData } from '../api/fetchWeatherData';
+import { GO_API_BASE_URL } from "@env";
 
 const getWeatherIconName = (condition) => {
   if (!condition) return 'partly-sunny';
@@ -19,13 +20,13 @@ const getWeatherIconName = (condition) => {
 };
 
 const fetchUserCities = async (userId) => {
-  const response = await fetch(`http://10.104.0.167:3000/api/users/${userId}/cities`);
+  const response = await fetch(`${GO_API_BASE_URL}/api/users/${userId}/cities`);
   if (!response.ok) throw new Error('都市データの取得に失敗しました');
   return await response.json();
 };
 
 const addUserCity = async (userId, cityName) => {
-  const response = await fetch(`http://10.104.0.167:3000/api/users/${userId}/cities`, {
+  const response = await fetch(`${GO_API_BASE_URL}/api/users/${userId}/cities`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ city_name: cityName }),
@@ -36,7 +37,7 @@ const addUserCity = async (userId, cityName) => {
 
 const deleteUserCity = async (userId, cityName) => {
   const encodedCityName = encodeURIComponent(cityName); // URLエンコード
-  const response = await fetch(`http://10.104.0.167:3000/api/users/${userId}/cities/name/${encodedCityName}`, {
+  const response = await fetch(`${GO_API_BASE_URL}/api/users/${userId}/cities/name/${encodedCityName}`, {
     method: 'DELETE',
   });
   if (!response.ok) throw new Error('都市の削除に失敗しました');

@@ -1,37 +1,75 @@
+import os
 import joblib
 import pandas as pd
+from typing import Dict, Any, Optional
 
+# List of categories with models
 CATEGORIES = ["bottoms", "shoes", "outer", "tops", "accessory"]
 
-def load_model(category):
-    model_path = f"models/{category}_model.pkl"
-    try:
-        model = joblib.load(model_path)
-        return model
-    except FileNotFoundError:
-        print(f"モデルファイルが見つかりません: {model_path}")
-        return None
+# Order of features used during training
+FEATURE_ORDER = ["weather", "user_id", "month", "day", "hour", "weekday", "temperature"]
 
-def recommend_for_category(category, features):
+def load_model(category: str) -> Optional[Any]:
+    """
+    Load the trained model pipeline for the specified category.
+    
+    Args:
+        category (str): The clothing category (e.g., "tops", "bottoms").
+    
+    Returns:
+        Trained Pipeline object or None if not found.
+    """
+    model_path = f"models/{category}_model.pkl"
+    if not os.path.exists(model_path):
+        print(f"[Warning] Model file not found: {model_path}")
+        return None
+    return joblib.load(model_path)
+
+def recommend_for_category(category: str, features: Dict[str, Any]) -> Optional[str]:
+    """
+    Predict the recommended clothing item for a given category.
+
+    Args:
+        category (str): The clothing category.
+        features (dict): Dictionary containing feature values.
+
+    Returns:
+        str: Predicted clothing item name or None if model not found.
+    """
     model = load_model(category)
     if model is None:
         return None
-    df = pd.DataFrame([features])
+
+    try:
+        input_data = {key: str(features[key]) for key in FEATURE_ORDER}
+    except KeyError as e:
+        print(f"[Error] Missing required feature: {e}")
+        return None
+
+    df = pd.DataFrame([input_data])
     prediction = model.predict(df)
     return prediction[0]
 
-def recommend_all(features):
-    recommendations = {}
-    for category in CATEGORIES:
-        item = recommend_for_category(category, features)
-        recommendations[category] = item
-    return recommendations
+def recommend_all(features: Dict[str, Any]) -> Dict[str, Optional[str]]:
+    """
+    Get clothing recommendations for all categories.
 
-# 使い方例
+    Args:
+        features (dict): Dictionary of input features.
+
+    Returns:
+        dict: Mapping from category to recommended item name.
+    """
+    return {
+        category: recommend_for_category(category, features)
+        for category in CATEGORIES
+    }
+
+# CLI test
 if __name__ == "__main__":
-    sample_features = {
+    sample_input = {
         "temperature": 20,
-        "weather": "clear",  # 学習時にエンコードされていれば文字列でもOK
+        "weather": "clear",
         "user_id": 1,
         "month": 6,
         "day": 3,
@@ -39,6 +77,6 @@ if __name__ == "__main__":
         "weekday": 2,
     }
 
-    recs = recommend_all(sample_features)
-    for cat, item in recs.items():
-        print(f"{cat}: {item}")
+    results = recommend_all(sample_input)
+    for category, item in results.items():
+        print(f"{category}: {item}")
