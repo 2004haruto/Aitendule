@@ -90,8 +90,10 @@ const WeatherSection = () => {
   const loadWeather = async (city) => {
     if (!city || city === 'add') return;
     setLoading(true);
+    console.log('🌤️ 取得中の都市:', city);
     try {
       const data = await fetchWeatherData(city);
+      console.log('🌡️ 取得した天気データ:', data);
       setWeatherData({ city: city, ...data });
     } catch (error) {
       console.error('天気の取得に失敗:', error);
@@ -215,7 +217,7 @@ const WeatherSection = () => {
             />
             <Text style={styles.weatherCondition}>{weatherData.condition}</Text>
           </View>
-          <Text style={styles.weatherTemperature}>{weatherData.temperature}</Text>
+          <Text style={styles.weatherTemperature}>現在の気温: {weatherData.temperature}</Text>
           <View style={{ flexDirection: 'row', justifyContent: 'flex-start' }}>
             <Text style={[styles.weatherHighLow, { color: 'red', marginRight: 4 }]}>最高: {weatherData.high}</Text>
             <Text style={[styles.weatherHighLow, { color: 'blue' }]}>最低: {weatherData.low}</Text>

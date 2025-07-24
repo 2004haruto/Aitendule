@@ -94,14 +94,6 @@ export default function HomeScreen({ navigation }) {
           <TodaySchedule />
         </View>
 
-        {/* AI学習メモ */}
-        <View style={styles.learningMemoContainer}>
-          <Text style={styles.sectionTitle}>AI学習メモ</Text>
-          <View style={styles.memoItem}>
-            <View style={styles.memoIcon} />
-            <Text style={styles.memoText}>最近の好み</Text>
-          </View>
-        </View>
       </ScrollView>
 
       {/* ボトムナビゲーション */}
@@ -205,6 +197,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     paddingVertical: 12,
+    paddingBottom: 30,
     backgroundColor: "#fff",
     borderTopWidth: 1,
     borderTopColor: "#ddd",

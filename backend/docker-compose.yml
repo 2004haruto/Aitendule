@@ -50,7 +50,7 @@ services:
     depends_on:
       - db
     volumes:
-      - ml_models:/app/models
+      - ./python-ml-api/models:/app/python-ml-api/models    
     networks:
       - app_network
 
@@ -69,7 +69,7 @@ services:
     depends_on:
       - db
     volumes:
-      - ./models:/app/models    
+      - ./python-ml-api/models:/app/python-ml-api/models    
     networks:
       - app_network
 

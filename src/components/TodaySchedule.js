@@ -19,20 +19,22 @@ export default function TodaySchedule() {
     requestCalendarPermission();
   }, []);
 
-  const requestCalendarPermission = async () => {
-    try {
-      const { status } = await Calendar.requestCalendarPermissionsAsync();
-      if (status === "granted") {
-        setPermissionGranted(true);
-        fetchTodayEvents();
-      } else {
-        Alert.alert("カレンダーアクセスが拒否されました");
-      }
-    } catch (error) {
-      console.error("パーミッションエラー:", error);
-      Alert.alert("カレンダーへのアクセス中にエラーが発生しました");
+const requestCalendarPermission = async () => {
+  try {
+    const { status: calendarStatus } = await Calendar.requestCalendarPermissionsAsync();
+    const { status: remindersStatus } = await Calendar.requestRemindersPermissionsAsync();
+
+    if (calendarStatus === "granted" && remindersStatus === "granted") {
+      setPermissionGranted(true);
+      fetchTodayEvents();
+    } else {
+      Alert.alert("カレンダーまたはリマインダーのアクセスが拒否されました");
     }
-  };
+  } catch (error) {
+    console.error("パーミッションエラー:", error);
+    Alert.alert("カレンダーまたはリマインダーへのアクセス中にエラーが発生しました");
+  }
+};
 
   const fetchTodayEvents = async () => {
     setLoading(true);
